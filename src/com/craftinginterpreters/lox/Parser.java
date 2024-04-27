@@ -1,6 +1,7 @@
 package com.craftinginterpreters.lox;
 
 import java.util.List;
+import java.util.ArrayList;
 
 class Parser {
   private final List<Token> tokens;
@@ -10,16 +11,136 @@ class Parser {
     this.tokens = tokens;
   }
   
-  Expr parse() {
+  List<Stmt> parse() {
+    List<Stmt> statements = new ArrayList<>();
+    while (!this.isAtEnd()) {
+      statements.add(this.declaration());
+    }
+    return statements;
+  }
+  
+  private Stmt declaration() {
     try {
-      return this.expression();
-    } catch (ParseError error) {
+      if (this.match(TokenType.VAR)) return this.varDeclaration();
+      
+      return this.statement();
+    } catch (ParseError e) {
+      this.synchronize();
       return null;
     }
   }
   
+  private Stmt varDeclaration() {
+    Token name = this.consume(TokenType.IDENTIFIER, "Expect variable name.");
+    
+    Expr initializer = null;
+    if (this.match(TokenType.EQUAL))
+      initializer = this.expression();
+    
+    this.consume(TokenType.SEMICOLON, "Expect ';' after declaration");
+    return new Stmt.Var(name, initializer);
+  }
+  
+  private Stmt statement() {
+    if (this.match(TokenType.LEFT_BRACE))
+      return new Stmt.Block(this.block());
+    if (this.match(TokenType.PRINT))
+      return this.printStatement();
+    if (this.match(TokenType.IF))
+      return this.ifStatement();
+    if (this.match(TokenType.WHILE))
+      return this.whileStatement();
+    return this.expressionStatement();
+  }
+  
+  private Stmt printStatement() {
+    Expr value = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expect ';' after value.");
+    return new Stmt.Print(value);
+  }
+  
+  private Stmt expressionStatement() {
+    Expr expr = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+    return new Stmt.Expression(expr);
+  }
+  
+  private Stmt ifStatement() {
+    this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+    Expr condition = this.expression();
+    this.consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
+    
+    Stmt thenBranch = this.statement();
+    
+    Stmt elseBranch = null;
+    if (this.match(TokenType.ELSE))
+      elseBranch = this.statement();
+    
+    return new Stmt.If(condition, thenBranch, elseBranch);
+  }
+  
+  private Stmt whileStatement() {
+    this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+    Expr condition = this.expression();
+    this.consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
+    
+    Stmt body = this.statement();
+    return new Stmt.While(condition, body);
+  }
+  
+  private List<Stmt> block() {
+    List<Stmt> statements = new ArrayList<>();
+    
+    while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+      statements.add(this.declaration());
+    }
+    
+    this.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");    
+    return statements;
+  }
+  
   private Expr expression() {
-    return this.equality();
+    return this.assignment();
+  }
+  
+  private Expr assignment() {
+    Expr expr = this.or();
+    
+    if (this.match(TokenType.EQUAL)) {
+      Token equals = this.previous();
+      Expr value = this.assignment();
+      if (expr instanceof Expr.Variable) {
+        Token name = ((Expr.Variable)expr).name;
+        return new Expr.Assign(name, value);
+      }
+      this.error(equals, "Invalid assignment target");
+    }
+    
+    return expr;
+  }
+  
+  private Expr or() {
+    Expr expr = this.and();
+    
+    while (this.match(TokenType.OR)) {
+      Token operator = this.previous();
+      Expr right = this.and();
+      expr = new Expr.Logical(expr, operator, right);
+    }
+    
+    return expr;
+  }
+  
+  private Expr and() {
+    Expr expr = this.equality();
+    
+    while (this.match(TokenType.AND)) {
+      Token operator = this.previous();
+      Expr right = this.equality();
+      expr = new Expr.Logical(expr, operator, right);
+    }
+    
+    return expr;
   }
   
   private Expr equality() {
@@ -98,6 +219,8 @@ class Parser {
     if (this.match(TokenType.NIL)) return new Expr.Literal(null);
     
     if (this.match(TokenType.NUMBER, TokenType.STRING)) return new Expr.Literal(previous().literal);
+    
+    if (this.match(TokenType.IDENTIFIER)) return new Expr.Variable(this.previous());
     
     if (this.match(TokenType.LEFT_PAREN)) {
       Expr expr = this.expression();

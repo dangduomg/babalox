@@ -63,6 +63,11 @@ class Scanner {
       case ';': this.addToken(TokenType.SEMICOLON); break;
       case '%': this.addToken(TokenType.PERCENT); break;
       
+      case '#':
+        // line comment
+        while (this.peek() != '\n' && !this.isAtEnd()) this.advance();
+        break;
+      
       case '!':
         this.addToken(this.match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
         break;
@@ -84,8 +89,11 @@ class Scanner {
         break;
       case '/':
         if (this.match('/')) {
-          // line comment
+          // another type of line comment
           while (this.peek() != '\n' && !this.isAtEnd()) this.advance();
+        } else if (this.match('*')) {
+          // block comment
+          this.blockComment();
         } else {
           this.addToken(TokenType.SLASH);
         }
@@ -111,6 +119,25 @@ class Scanner {
           Lox.error(this.line, "Unexpected character.");
         }
         break;
+    }
+  }
+  
+  private void blockComment() {
+    while (true) {
+      if (this.isAtEnd()) {
+        Lox.error(this.line, "Unterminated block comment.");
+        break;
+      }
+      
+      if (this.match('*')) {
+        if (this.match('/')) {
+          break;
+        }
+      } else if (this.match('\n')) {
+        this.line++;
+      } else {
+        this.advance();
+      }
     }
   }
   
@@ -179,8 +206,8 @@ class Scanner {
   
   private boolean isAlpha(char c) {
     return (c >= 'a' && c <= 'z') ||
-      (c >= 'A' && c <= 'Z') ||
-      c == '_';
+           (c >= 'A' && c <= 'Z') ||
+            c == '_';
   }
   
   private boolean isAlphaNumeric(char c) {

@@ -1,15 +1,95 @@
 package com.craftinginterpreters.lox;
 
 import java.lang.Math;
+import java.util.List;
 
-class Interpreter implements Expr.Visitor<Object> {
-  void interpret(Expr expression) {
+class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+  private Environment environment = new Environment();
+  
+  void interpret(List<Stmt> statements) {
     try {
-      Object value = this.evaluate(expression);
-      System.out.println(this.stringify(value));
-    } catch (RuntimeError error) {
-      Lox.runtimeError(error);
+      for (Stmt statement : statements) {
+        this.execute(statement);
+      }
+    } catch (RuntimeError e) {
+      Lox.runtimeError(e);
     }
+  }
+  
+  private void execute(Stmt statement) {
+    statement.accept(this);
+  }
+  
+  @Override
+  public Void visitExpressionStmt(Stmt.Expression stmt) {
+    this.evaluate(stmt.expression);
+    return null;
+  }
+  
+  @Override
+  public Void visitPrintStmt(Stmt.Print stmt) {
+    Object value = this.evaluate(stmt.expression);
+    System.out.println(this.stringify(value));
+    return null;
+  }
+  
+  @Override
+  public Void visitVarStmt(Stmt.Var stmt) {
+    Object value = null;
+    if (stmt.initializer != null) {
+      value = this.evaluate(stmt.initializer);
+    }
+    
+    this.environment.define(stmt.name, value);
+    return null;
+  }
+  
+  @Override
+  public Void visitBlockStmt(Stmt.Block stmt) {
+    this.executeBlock(stmt.statements, new Environment(this.environment));
+    return null;
+  }
+  
+  void executeBlock(List<Stmt> statements, Environment environment) {
+    Environment previous = this.environment;
+    try {
+      this.environment = environment;
+      
+      for (Stmt statement : statements) {
+        this.execute(statement);
+      }
+    } finally {
+      this.environment = previous;
+    }
+  }
+  
+  @Override
+  public Void visitIfStmt(Stmt.If stmt) {
+    if (this.isTruthy(this.evaluate(stmt.condition)))
+      this.execute(stmt.thenBranch);
+    else if (stmt.elseBranch != null)
+      this.execute(stmt.elseBranch);
+    
+    return null;
+  }
+  
+  @Override
+  public Void visitWhileStmt(Stmt.While stmt) {
+    while (this.isTruthy(this.evaluate(stmt.condition)))
+      this.execute(stmt.body);
+    
+    return null;
+  }
+  
+  private Object evaluate(Expr expr) {
+    return expr.accept(this);
+  }
+  
+  @Override
+  public Object visitAssignExpr(Expr.Assign expr) {
+    Object value = this.evaluate(expr.value);
+    this.environment.assign(expr.name, value);
+    return value;
   }
   
   @Override
@@ -23,12 +103,17 @@ class Interpreter implements Expr.Visitor<Object> {
   }
   
   @Override
+  public Object visitVariableExpr(Expr.Variable expr) {
+    return this.environment.get(expr.name);
+  }
+  
+  @Override
   public Object visitUnaryExpr(Expr.Unary expr) {
     Object right = this.evaluate(expr.right);
     
     switch (expr.operator.type) {
       case BANG:
-        return !isTruthy(right);
+        return !this.isTruthy(right);
       case MINUS:
         this.checkNumberOperand(expr.operator, right);
         return -(double)right;
@@ -38,29 +123,14 @@ class Interpreter implements Expr.Visitor<Object> {
     return null;
   }
   
-  private void checkNumberOperand(Token operator, Object operand) {
-    if (operand instanceof Double) return;
-    throw new RuntimeError(operator, "Operand must be a number.");
-  }
-  
-  private boolean isTruthy(Object object) {
-    if (object == null) return false;
-    if (object instanceof Boolean) return (boolean)object;
-    return true;
-  }
-  
-  private Object evaluate(Expr expr) {
-    return expr.accept(this);
-  }
-  
   @Override
   public Object visitBinaryExpr(Expr.Binary expr) {
     Object left = this.evaluate(expr.left);
     Object right = this.evaluate(expr.right); 
     
     switch (expr.operator.type) {
-      case EQUAL_EQUAL: return isEqual(left, right);
-      case BANG_EQUAL: return !isEqual(left, right);
+      case EQUAL_EQUAL: return this.isEqual(left, right);
+      case BANG_EQUAL: return !this.isEqual(left, right);
       case GREATER:
         this.checkNumberOperands(expr.operator, left, right);
         return (double)left > (double)right;
@@ -100,6 +170,29 @@ class Interpreter implements Expr.Visitor<Object> {
     
     // unreachable
     return null;
+  }
+  
+  @Override
+  public Object visitLogicalExpr(Expr.Logical expr) {
+    Object left = this.evaluate(expr.left);
+    
+    if (expr.operator.type == TokenType.OR)
+      if (this.isTruthy(left)) return left;
+    else if (expr.operator.type == TokenType.AND)
+      if (!this.isTruthy(left)) return left;
+    
+    return this.evaluate(expr.right);
+  }
+                      
+  private void checkNumberOperand(Token operator, Object operand) {
+    if (operand instanceof Double) return;
+    throw new RuntimeError(operator, "Operand must be a number.");
+  }
+  
+  private boolean isTruthy(Object object) {
+    if (object == null) return false;
+    if (object instanceof Boolean) return (boolean)object;
+    return true;
   }
   
   private void checkNumberOperands(Token operator, Object left, Object right) {

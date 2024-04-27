@@ -1,0 +1,10 @@
+var a = 'bye';
+{
+	print a;
+	var a = 'hello';
+	{
+		var b = 'world';
+		print b;
+		print a + ' ' + b;
+	}
+}

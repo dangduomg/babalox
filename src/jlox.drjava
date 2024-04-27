@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<drjava version="drjava-20190813-220051">
+  <project autorefresh="false" build="../build/" main="com.craftinginterpreters.lox.Lox" manifest="" root="" work="com/craftinginterpreters/lox/">
+    <createjar file="jlox.jar" flags="5"/>
+    <source>
+      <file active="true" name="com/craftinginterpreters/lox/Parser.java" package="com.craftinginterpreters.lox" timestamp="27-Apr-2024 00:25:40">
+        <select from="2100" to="2100"/>
+        <scroll column="547" row="0"/>
+      </file>
+      <file name="com/craftinginterpreters/lox/Expr.java" package="com.craftinginterpreters.lox" timestamp="27-Apr-2024 00:09:35">
+        <select from="2100" to="2100"/>
+        <scroll column="547" row="0"/>
+      </file>
+      <file name="com/craftinginterpreters/lox/Token.java" package="com.craftinginterpreters.lox" timestamp="18-Apr-2024 16:24:33">
+        <select from="2100" to="2100"/>
+        <scroll column="547" row="0"/>
+      </file>
+      <file name="com/craftinginterpreters/lox/Stmt.java" package="com.craftinginterpreters.lox" timestamp="27-Apr-2024 00:09:35">
+        <select from="2100" to="2100"/>
+        <scroll column="547" row="0"/>
+      </file>
+      <file name="com/craftinginterpreters/lox/RuntimeError.java" package="com.craftinginterpreters.lox" timestamp="21-Apr-2024 14:51:30">
+        <select from="2100" to="2100"/>
+        <scroll column="547" row="0"/>
+      </file>
+      <file name="com/craftinginterpreters/lox/TokenType.java" package="com.craftinginterpreters.lox" timestamp="21-Apr-2024 23:15:16">
+        <select from="2100" to="2100"/>
+        <scroll column="547" row="0"/>
+      </file>
+      <file name="com/craftinginterpreters/lox/Scanner.java" package="com.craftinginterpreters.lox" timestamp="21-Apr-2024 23:54:51">
+        <select from="2100" to="2100"/>
+        <scroll column="547" row="0"/>
+      </file>
+      <file name="com/craftinginterpreters/lox/Lox.java" package="com.craftinginterpreters.lox" timestamp="24-Apr-2024 17:27:11">
+        <select from="2100" to="2100"/>
+        <scroll column="547" row="0"/>
+      </file>
+      <file name="com/craftinginterpreters/lox/Environment.java" package="com.craftinginterpreters.lox" timestamp="25-Apr-2024 23:10:30">
+        <select from="2100" to="2100"/>
+        <scroll column="547" row="0"/>
+      </file>
+      <file name="com/craftinginterpreters/lox/Interpreter.java" package="com.craftinginterpreters.lox" timestamp="27-Apr-2024 00:18:58">
+        <select from="2100" to="2100"/>
+        <scroll column="547" row="0"/>
+      </file>
+    </source>
+    <included/>
+    <excluded/>
+    <collapsed/>
+    <classpath/>
+    <breakpoints/>
+    <watches/>
+    <bookmarks/>
+    <preferences/>
+  </project>
+</drjava>
