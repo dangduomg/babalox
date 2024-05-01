@@ -1,5 +1,6 @@
 package com.craftinginterpreters.lox;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -50,6 +51,8 @@ class Parser {
       return this.ifStatement();
     if (this.match(TokenType.WHILE))
       return this.whileStatement();
+    if (this.match(TokenType.FOR))
+      return this.forStatement();
     return this.expressionStatement();
   }
   
@@ -86,6 +89,55 @@ class Parser {
     
     Stmt body = this.statement();
     return new Stmt.While(condition, body);
+  }
+
+  private Stmt forStatement() {
+    this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+
+    Stmt initializer;
+    if (this.match(TokenType.SEMICOLON)) {
+      initializer = null;
+    } else if (this.match(TokenType.VAR)) {
+      initializer = this.varDeclaration();
+    } else {
+      initializer = this.expressionStatement();
+    }
+
+    Expr condition = null;
+    if (!this.check(TokenType.SEMICOLON)) {
+      condition = this.expression();
+    }
+    this.consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+    Expr increment = null;
+    if (!this.check(TokenType.RIGHT_PAREN)) {
+      increment = this.expression();
+    }
+    this.consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    Stmt body = this.statement();
+
+    if (increment != null)
+      body = new Stmt.Block(
+        Arrays.asList(
+          body,
+          new Stmt.Expression(increment),
+        )
+      );
+
+    if (condition == null)
+      condition = new Expr.Literal(true);
+    body = new Stmt.While(condition, body);
+
+    if (initializer != null)
+      body = new Stmt.Block(
+        Arrays.asList(
+          initializer,
+          body,
+        )
+      );
+
+    return body;
   }
   
   private List<Stmt> block() {
