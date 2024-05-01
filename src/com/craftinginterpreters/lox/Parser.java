@@ -121,7 +121,7 @@ class Parser {
       body = new Stmt.Block(
         Arrays.asList(
           body,
-          new Stmt.Expression(increment),
+          new Stmt.Expression(increment)
         )
       );
 
@@ -133,7 +133,7 @@ class Parser {
       body = new Stmt.Block(
         Arrays.asList(
           initializer,
-          body,
+          body
         )
       );
 
