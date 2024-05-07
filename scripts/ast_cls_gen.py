@@ -1,5 +1,3 @@
-#!/bin/python3
-
 from pathlib import Path
 from typing import Dict
 
