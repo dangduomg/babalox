@@ -1,0 +1,46 @@
+var start;
+var end;
+
+
+# fib with recursion
+
+fun fib(n) {
+    if (n <= 1) return n;
+    return fib(n - 2) + fib(n - 1);
+}
+
+start = clock();
+for (var i = 0; i < 20; i = i + 1) {
+    print fib(i);
+}
+end = clock();
+
+print '';
+print '[' + toString(end - start) + ' seconds]';
+
+print '';
+
+# fib with iteration
+
+fun fibIter() {
+    var i = 0;
+    var j = 1;
+    fun _fibIter() {
+        var res = i;
+        var t = j;
+        j = i + j;
+        i = t;
+        return res;
+    }
+    return _fibIter;
+}
+var myFib = fibIter();
+
+start = clock();
+for (var i = 0; i < 20; i = i + 1) {
+    print myFib();
+}
+end = clock();
+
+print '';
+print '[' + toString(end - start) + ' seconds]';
