@@ -2,9 +2,39 @@ package com.craftinginterpreters.lox;
 
 import java.lang.Math;
 import java.util.List;
+import java.util.ArrayList;
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
-  private Environment environment = new Environment();
+  final Environment globals = new Environment();
+  private Environment environment = globals;
+
+  Interpreter() {
+    globals.defineName("clock", new LoxCallable.Native("clock", 0) {
+      @Override
+      public Object call(Interpreter intp, List<Object> args) {
+        return (double)System.currentTimeMillis() / 1000.0;
+      }
+    });
+    globals.defineName("puts", new LoxCallable.Native("puts", 1) {
+      @Override
+      public Object call(Interpreter intp, List<Object> args) {
+        System.out.println(args.get(0));
+        return null;
+      }
+    });
+    globals.defineName("gets", new LoxCallable.Native("gets", 0) {
+      @Override
+      public Object call(Interpreter intp, List<Object> args) {
+        return new java.util.Scanner(System.in).nextLine();
+      }
+    });
+    globals.defineName("toString", new LoxCallable.Native("toString", 1) {
+      @Override
+      public Object call(Interpreter intp, List<Object> args) {
+        return args.get(0).toString();
+      }
+    });
+  }
   
   void interpret(List<Stmt> statements) {
     try {
@@ -54,13 +84,27 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     Environment previous = this.environment;
     try {
       this.environment = environment;
-      
       for (Stmt statement : statements) {
         this.execute(statement);
       }
     } finally {
       this.environment = previous;
     }
+  }
+
+  @Override
+  public Void visitFunctionStmt(Stmt.Function stmt) {
+    var function = new LoxFunction(stmt, this.environment);
+    this.environment.define(stmt.name, function);
+    return null;
+  }
+
+  @Override
+  public Void visitReturnStmt(Stmt.Return stmt) {
+    Object value = null;
+    if (stmt.value != null)
+      value = this.evaluate(stmt.value);
+    throw new Return(value);
   }
   
   @Override
@@ -182,6 +226,25 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
       if (!this.isTruthy(left)) return left;
     
     return this.evaluate(expr.right);
+  }
+
+  @Override
+  public Object visitCallExpr(Expr.Call expr) {
+    Object callee = this.evaluate(expr.callee);
+    if (!(callee instanceof LoxCallable))
+      throw new RuntimeError(expr.paren, "Can only call functions and classes.");
+    
+    List<Object> arguments = new ArrayList<>();
+    for (Expr argument : expr.arguments) {
+      arguments.add(this.evaluate(argument));
+    }
+
+    LoxCallable function = (LoxCallable)callee;
+    if (arguments.size() != function.arity())
+      throw new RuntimeError(expr.paren,
+        "Expected "+function.arity()+"arguments but got "+arguments.size()
+      );
+    return function.call(this, arguments);
   }
                       
   private void checkNumberOperand(Token operator, Object operand) {

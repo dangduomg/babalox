@@ -24,6 +24,10 @@ class Environment {
     
     throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
   }
+
+  void defineName(String name, Object value) {
+    this.values.put(name, value);
+  }
   
   void define(Token name, Object value) {
     this.values.put(name.lexeme, value);

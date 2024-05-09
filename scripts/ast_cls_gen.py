@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from pathlib import Path
 from typing import Dict
 
@@ -61,6 +63,7 @@ def main():
         'Unary': {'operator': 'Token', 'right': 'Expr'},
         'Variable': {'name': 'Token'},
         'Assign': {'name': 'Token', 'value': 'Expr'},
+        'Call': {'callee': 'Expr', 'paren': 'Token', 'arguments': 'List<Expr>'},
     })
     define_ast(output_dir, 'Stmt', {
         'Block': {'statements': 'List<Stmt>'},
@@ -69,6 +72,8 @@ def main():
         'Var': {'name': 'Token', 'initializer': 'Expr'},
         'If': {'condition': 'Expr', 'thenBranch': 'Stmt', 'elseBranch': 'Stmt'},
         'While': {'condition': 'Expr', 'body': 'Stmt'},
+        'Function': {'name': 'Token', 'params': 'List<Token>', 'body': 'List<Stmt>'},
+        'Return': {'keyword': 'Token' , 'value': 'Expr'},
     })
 
 if __name__ == '__main__':
