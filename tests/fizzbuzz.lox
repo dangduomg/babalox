@@ -1,0 +1,29 @@
+# like loopTest but better
+
+fun fizzbuzz(start, stop, step) {
+    for (var i = start; i <= stop; i = i + step) {
+        if (i % 5 == 0 and i % 3 == 0)
+            puts('fizzbuzz');
+        else if (i % 5 == 0)
+            puts('buzz');
+        else if (i % 3 == 0)
+            print('fizz');
+        else
+            print(i);
+    }
+}
+
+puts('fizzbuzz');
+
+puts('');
+
+puts('from:');
+var start = toNumber(gets());
+puts('to:');
+var stop = toNumber(gets());
+puts('by:');
+var step = toNumber(gets());
+
+puts('');
+
+fizzbuzz(start, stop, step);
