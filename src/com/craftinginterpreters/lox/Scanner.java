@@ -230,4 +230,15 @@ class Scanner {
     String text = this.source.substring(this.start, this.current);
     this.tokens.add(new Token(type, text, literal, this.line));
   }
+
+  static Double toNumber(String string) {
+    var scanner = new Scanner(string);
+    scanner.scanToken();
+
+    var token = scanner.tokens.get(0);
+    if (token.type != TokenType.NUMBER)
+      return Double.NaN;
+    
+    return (Double)token.literal;
+  }
 }

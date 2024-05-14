@@ -34,7 +34,18 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     this.globals.defineName("toString", new LoxCallable.Native("toString", 1) {
       @Override
       public Object call(Interpreter intp, List<Object> args) {
-        return args.get(0).toString();
+        return intp.stringify(args.get(0));
+      }
+    });
+    this.globals.defineName("toNumber", new LoxCallable.Native("toNumber", 1) {
+      @Override
+      public Object call(Interpreter intp, List<Object> args) {
+        var arg = args.get(0);
+        if (arg instanceof String)
+          return Scanner.toNumber((String)arg);
+        else if (arg instanceof Double)
+          return arg;
+        return Double.NaN;
       }
     });
   }
