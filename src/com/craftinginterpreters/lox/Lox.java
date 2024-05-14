@@ -49,14 +49,19 @@ public class Lox {
   }
   
   private static void run(String source) {
+    // parse time
     Scanner scanner = new Scanner(source);
     List<Token> tokens = scanner.scanTokens();
     Parser parser = new Parser(tokens);
     List<Stmt> statements = parser.parse();
-    
-    // Stop if there was a syntax error.
     if (hadError) return;
-    
+
+    // compile time
+    var resolver = new Resolver(interpreter);
+    resolver.resolve(statements);
+    if (hadError) return;
+
+    // runtime
     interpreter.interpret(statements);
   }
   

@@ -25,6 +25,10 @@ class Environment {
     throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
   }
 
+  Object getAt(int distance, Token name) {
+    return this.ancestor(distance).get(name);
+  }
+
   void defineName(String name, Object value) {
     this.values.put(name, value);
   }
@@ -45,5 +49,17 @@ class Environment {
     }
     
     throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
+  }
+
+  void assignAt(int distance, Token name, Object value) {
+    this.ancestor(distance).assign(name, value);
+  }
+
+  Environment ancestor(int distance) {
+    var environment = this;
+    for (int i = 0; i < distance; i++) {
+      environment = environment.enclosing;
+    }
+    return environment;
   }
 }

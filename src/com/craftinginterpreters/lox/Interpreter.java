@@ -3,32 +3,35 @@ package com.craftinginterpreters.lox;
 import java.lang.Math;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
   final Environment globals = new Environment();
+  private final Map<Expr, Integer> locals = new HashMap<>();
   private Environment environment = globals;
 
   Interpreter() {
-    globals.defineName("clock", new LoxCallable.Native("clock", 0) {
+    this.globals.defineName("clock", new LoxCallable.Native("clock", 0) {
       @Override
       public Object call(Interpreter intp, List<Object> args) {
         return (double)System.currentTimeMillis() / 1000.0;
       }
     });
-    globals.defineName("puts", new LoxCallable.Native("puts", 1) {
+    this.globals.defineName("puts", new LoxCallable.Native("puts", 1) {
       @Override
       public Object call(Interpreter intp, List<Object> args) {
-        System.out.println(args.get(0));
+        System.out.println(intp.stringify(args.get(0)));
         return null;
       }
     });
-    globals.defineName("gets", new LoxCallable.Native("gets", 0) {
+    this.globals.defineName("gets", new LoxCallable.Native("gets", 0) {
       @Override
       public Object call(Interpreter intp, List<Object> args) {
         return new java.util.Scanner(System.in).nextLine();
       }
     });
-    globals.defineName("toString", new LoxCallable.Native("toString", 1) {
+    this.globals.defineName("toString", new LoxCallable.Native("toString", 1) {
       @Override
       public Object call(Interpreter intp, List<Object> args) {
         return args.get(0).toString();
@@ -48,6 +51,10 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
   
   private void execute(Stmt statement) {
     statement.accept(this);
+  }
+
+  void resolve(Expr expr, int depth) {
+    this.locals.put(expr, depth);
   }
   
   @Override
@@ -132,7 +139,14 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
   @Override
   public Object visitAssignExpr(Expr.Assign expr) {
     Object value = this.evaluate(expr.value);
-    this.environment.assign(expr.name, value);
+
+    Integer distance = this.locals.get(expr);
+    if (distance != null) {
+      this.environment.assignAt(distance, expr.name, value);
+    } else {
+      this.globals.assign(expr.name, value);
+    }
+
     return value;
   }
   
@@ -148,7 +162,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
   
   @Override
   public Object visitVariableExpr(Expr.Variable expr) {
-    return this.environment.get(expr.name);
+    return this.lookupVariable(expr);
   }
   
   @Override
@@ -245,6 +259,15 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         "Expected "+function.arity()+"arguments but got "+arguments.size()
       );
     return function.call(this, arguments);
+  }
+
+  private Object lookupVariable(Expr.Variable expr) {
+    Integer distance = this.locals.get(expr);
+    if (distance != null) {
+      return this.environment.getAt(distance, expr.name);
+    } else {
+      return this.environment.get(expr.name);
+    }
   }
                       
   private void checkNumberOperand(Token operator, Object operand) {
