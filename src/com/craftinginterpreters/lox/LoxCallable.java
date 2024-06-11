@@ -3,22 +3,27 @@ package com.craftinginterpreters.lox;
 import java.util.List;
 
 interface LoxCallable {
-  int arity();
-  Object call(Interpreter interpreter, List<Object> arguments);
+	int arity();
 
-  static abstract class Native implements LoxCallable {
-    final String name;
-    private final int _arity;
+	Object call(Interpreter interpreter, List<Object> arguments);
 
-    Native(String name, int arity) {
-      this.name = name;
-      this._arity = arity;
-    }
+	static abstract class Native implements LoxCallable {
+		final String name;
+		private final int _arity;
 
-    @Override
-    public int arity() { return this._arity; }
+		Native(String name, int arity) {
+			this.name = name;
+			this._arity = arity;
+		}
 
-    @Override
-    public String toString() { return "<native fn "+this.name+">"; }
-  }
+		@Override
+		public int arity() {
+			return this._arity;
+		}
+
+		@Override
+		public String toString() {
+			return "<native fn " + this.name + ">";
+		}
+	}
 }

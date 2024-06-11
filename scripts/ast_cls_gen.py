@@ -5,34 +5,34 @@ from typing import Dict
 
 
 def define_type(base_name, name, fields: Dict):
-    field_decls = '\n    '.join(f'final {typ} {name};'
+    field_decls = '\n\t\t'.join(f'final {typ} {name};'
                                 for name, typ in fields.items())
     constr_args = ', '.join(f'{typ} {name}'
                             for name, typ in fields.items())
-    constr_body = '\n      '.join(f'this.{name} = {name};'
+    constr_body = '\n\t\t\t'.join(f'this.{name} = {name};'
                                   for name in fields.keys())
     return '''
-  static class {n} extends {bn} {{
-    {f}
+\tstatic class {n} extends {bn} {{
+\t\t{f}
+
+\t\t{n}({ca}) {{
+\t\t\t{cb}
+\t\t}}
     
-    {n}({ca}) {{
-      {cb}
-    }}
-    
-    @Override
-    <R> R accept(Visitor<R> visitor) {{
-      return visitor.visit{n}{bn}(this);
-    }}
-  }}
-  '''.format(n=name, bn=base_name, f=field_decls, ca=constr_args, cb=constr_body)
+\t\t@Override
+\t\t<R> R accept(Visitor<R> visitor) {{
+\t\t\treturn visitor.visit{n}{bn}(this);
+\t\t}}
+\t}}
+'''.format(n=name, bn=base_name, f=field_decls, ca=constr_args, cb=constr_body)
 
 def define_visitor(base_name, types: Dict):
-    ast_visitors = '\n    '.join(f'R visit{type_name}{base_name}({type_name} {base_name.lower()});'
+    ast_visitors = '\n\t\t'.join(f'R visit{type_name}{base_name}({type_name} {base_name.lower()});'
                                  for type_name in types.keys())
     return '''\
-  interface Visitor<R> {{
-    {v}
-  }}
+\tinterface Visitor<R> {{
+\t\t{v}
+\t}}
 '''.format(v=ast_visitors)
 
 def define_ast(output_dir, base_name, types: Dict):
@@ -47,7 +47,7 @@ import java.util.List;
 
 abstract class {bn} {{
 {v}
-  abstract<R> R accept(Visitor<R> visitor);
+\tabstract<R> R accept(Visitor<R> visitor);
 {acs}
 }}
 '''.format(bn=base_name, acs=ast_classes, v=visitor))
@@ -64,6 +64,8 @@ def main():
         'Variable': {'name': 'Token'},
         'Assign': {'name': 'Token', 'value': 'Expr'},
         'Call': {'callee': 'Expr', 'paren': 'Token', 'arguments': 'List<Expr>'},
+        'Get': {'object': 'Expr', 'name': 'Token'},
+        'Set': {'object': 'Expr', 'name': 'Token', 'value': 'Expr'},
     })
     define_ast(output_dir, 'Stmt', {
         'Block': {'statements': 'List<Stmt>'},
@@ -74,6 +76,7 @@ def main():
         'While': {'condition': 'Expr', 'body': 'Stmt'},
         'Function': {'name': 'Token', 'params': 'List<Token>', 'body': 'List<Stmt>'},
         'Return': {'keyword': 'Token' , 'value': 'Expr'},
+        'Class': {'name': 'Token', 'methods': 'List<Stmt.Function>'},
     })
 
 if __name__ == '__main__':

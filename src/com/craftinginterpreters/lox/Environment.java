@@ -4,62 +4,62 @@ import java.util.Map;
 import java.util.HashMap;
 
 class Environment {
-  private final Map<String, Object> values = new HashMap<>();
-  private Environment enclosing;
-  
-  Environment() {
-    this.enclosing = null;
-  }
-  
-  Environment(Environment enclosing) {
-    this.enclosing = enclosing;
-  }
-  
-  Object get(Token name) {
-    if (this.values.containsKey(name.lexeme))
-      return this.values.get(name.lexeme);
-    
-    if (this.enclosing != null)
-      return this.enclosing.get(name);
-    
-    throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
-  }
+	private final Map<String, Object> values = new HashMap<>();
+	private Environment enclosing;
 
-  Object getAt(int distance, Token name) {
-    return this.ancestor(distance).get(name);
-  }
+	Environment() {
+		this.enclosing = null;
+	}
 
-  void defineName(String name, Object value) {
-    this.values.put(name, value);
-  }
-  
-  void define(Token name, Object value) {
-    this.values.put(name.lexeme, value);
-  }
-  
-  void assign(Token name, Object value) {
-    if (this.values.containsKey(name.lexeme)) {
-      this.values.put(name.lexeme, value);
-      return;
-    }
-    
-    if (this.enclosing != null) {
-      this.enclosing.assign(name, value);
-      return;
-    }
-    
-    throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
-  }
+	Environment(Environment enclosing) {
+		this.enclosing = enclosing;
+	}
 
-  void assignAt(int distance, Token name, Object value) {
-    this.ancestor(distance).assign(name, value);
-  }
+	Object get(Token name) {
+		if (this.values.containsKey(name.lexeme))
+			return this.values.get(name.lexeme);
 
-  Environment ancestor(int distance) {
-    var environment = this;
-    for (int i = 0; i < distance; i++) {
-      environment = environment.enclosing;
-    }
-    return environment;
-  }
+		if (this.enclosing != null)
+			return this.enclosing.get(name);
+
+		throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
+	}
+
+	Object getAt(int distance, Token name) {
+		return this.ancestor(distance).get(name);
+	}
+
+	void defineName(String name, Object value) {
+		this.values.put(name, value);
+	}
+
+	void define(Token name, Object value) {
+		this.values.put(name.lexeme, value);
+	}
+
+	void assign(Token name, Object value) {
+		if (this.values.containsKey(name.lexeme)) {
+			this.values.put(name.lexeme, value);
+			return;
+		}
+
+		if (this.enclosing != null) {
+			this.enclosing.assign(name, value);
+			return;
+		}
+
+		throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
+	}
+
+	void assignAt(int distance, Token name, Object value) {
+		this.ancestor(distance).assign(name, value);
+	}
+
+	Environment ancestor(int distance) {
+		var environment = this;
+		for (int i = 0; i < distance; i++) {
+			environment = environment.enclosing;
+		}
+		return environment;
+	}
 }
