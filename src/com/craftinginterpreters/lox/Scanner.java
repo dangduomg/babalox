@@ -272,6 +272,6 @@ class Scanner {
 		if (token.type != TokenType.NUMBER)
 			return Double.NaN;
 
-		return (Double) token.literal;
+		return (Double)token.literal;
 	}
 }

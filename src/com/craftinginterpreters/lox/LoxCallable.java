@@ -9,16 +9,16 @@ interface LoxCallable {
 
 	static abstract class Native implements LoxCallable {
 		final String name;
-		private final int _arity;
+		private final int arity;
 
 		Native(String name, int arity) {
 			this.name = name;
-			this._arity = arity;
+			this.arity = arity;
 		}
 
 		@Override
 		public int arity() {
-			return this._arity;
+			return this.arity;
 		}
 
 		@Override
