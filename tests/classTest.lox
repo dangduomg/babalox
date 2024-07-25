@@ -1,0 +1,20 @@
+class Random {
+	init(seed) {
+		this.state = seed;
+	}
+
+	next() {
+		this.state = (this.state * 1103515245 + 12345) % 2 ** 31;
+		return this.state;
+	}
+}
+
+puts('enter seed:');
+var seed = toNumber(gets());
+puts();
+
+var random = Random(seed);
+puts('the first 5 random numbers are:');
+for (var i = 0; i < 5; i = i + 1) {
+	puts(random.next());
+}

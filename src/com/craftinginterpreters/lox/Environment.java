@@ -26,15 +26,19 @@ class Environment {
 	}
 
 	Object getAt(int distance, Token name) {
-		return this.ancestor(distance).get(name);
+		return this.getAt(distance, name.lexeme);
 	}
-
-	void defineName(String name, Object value) {
-		this.values.put(name, value);
+	
+	Object getAt(int distance, String name) {
+		return this.ancestor(distance).values.get(name);
 	}
-
+	
 	void define(Token name, Object value) {
-		this.values.put(name.lexeme, value);
+		this.define(name.lexeme, value);
+	}
+
+	void define(String name, Object value) {
+		this.values.put(name, value);
 	}
 
 	void assign(Token name, Object value) {
@@ -52,14 +56,20 @@ class Environment {
 	}
 
 	void assignAt(int distance, Token name, Object value) {
-		this.ancestor(distance).assign(name, value);
+		var env = this.ancestor(distance);
+		if (env.values.containsKey(name.lexeme)) {
+			env.values.put(name.lexeme, value);
+			return;
+		}
+
+		throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
 	}
 
 	Environment ancestor(int distance) {
-		var environment = this;
+		var env = this;
 		for (int i = 0; i < distance; i++) {
-			environment = environment.enclosing;
+			env = env.enclosing;
 		}
-		return environment;
+		return env;
 	}
 }

@@ -64,16 +64,16 @@ class Parser {
 		var block = this.block();
 		return new Stmt.Function(name, parameters, block);
 	}
-	
+
 	private Stmt classDeclaration() {
 		var name = this.consume(TokenType.IDENTIFIER, "Expect class name.");
 		this.consume(TokenType.LEFT_BRACE, "Expect '{' after class name");
-		
+
 		var methods = new ArrayList<Stmt.Function>();
 		while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
 			methods.add(this.function("method"));
 		}
-		
+
 		this.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body");
 		return new Stmt.Class(name, methods);
 	}
@@ -203,7 +203,7 @@ class Parser {
 				Token name = ((Expr.Variable) expr).name;
 				return new Expr.Assign(name, value);
 			} else if (expr instanceof Expr.Get) {
-				var get = (Expr.Get)expr;
+				var get = (Expr.Get) expr;
 				return new Expr.Set(get.object, get.name, value);
 			} else {
 				this.error(equals, "Invalid assignment target");
@@ -347,10 +347,13 @@ class Parser {
 			return new Expr.Literal(null);
 
 		if (this.match(TokenType.NUMBER, TokenType.STRING))
-			return new Expr.Literal(previous().literal);
+			return new Expr.Literal(this.previous().literal);
 
 		if (this.match(TokenType.IDENTIFIER))
 			return new Expr.Variable(this.previous());
+
+		if (this.match(TokenType.THIS))
+			return new Expr.This(this.previous());
 
 		if (this.match(TokenType.LEFT_PAREN)) {
 			Expr expr = this.expression();

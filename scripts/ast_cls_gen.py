@@ -11,46 +11,46 @@ def define_type(base_name, name, fields: Dict):
                             for name, typ in fields.items())
     constr_body = '\n\t\t\t'.join(f'this.{name} = {name};'
                                   for name in fields.keys())
-    return '''
-\tstatic class {n} extends {bn} {{
-\t\t{f}
+    return f'''
+\tstatic class {name} extends {base_name} {{
+\t\t{field_decls}
 
-\t\t{n}({ca}) {{
-\t\t\t{cb}
+\t\t{name}({constr_args}) {{
+\t\t\t{constr_body}
 \t\t}}
     
 \t\t@Override
 \t\t<R> R accept(Visitor<R> visitor) {{
-\t\t\treturn visitor.visit{n}{bn}(this);
+\t\t\treturn visitor.visit{name}{base_name}(this);
 \t\t}}
 \t}}
-'''.format(n=name, bn=base_name, f=field_decls, ca=constr_args, cb=constr_body)
+'''
 
 def define_visitor(base_name, types: Dict):
     ast_visitors = '\n\t\t'.join(f'R visit{type_name}{base_name}({type_name} {base_name.lower()});'
                                  for type_name in types.keys())
-    return '''\
+    return f'''\
 \tinterface Visitor<R> {{
-\t\t{v}
+\t\t{ast_visitors}
 \t}}
-'''.format(v=ast_visitors)
+'''
 
 def define_ast(output_dir, base_name, types: Dict):
     with open(output_dir/f'{base_name}.java', encoding='utf-8', mode='w') as f:
         ast_classes = ''.join(define_type(base_name, type_name, fields)
                               for type_name, fields in types.items())
         visitor = define_visitor(base_name, types)
-        f.write('''\
+        f.write(f'''\
 package com.craftinginterpreters.lox;
 
 import java.util.List;
 
-abstract class {bn} {{
-{v}
+abstract class {base_name} {{
+{visitor}
 \tabstract<R> R accept(Visitor<R> visitor);
-{acs}
+{ast_classes}
 }}
-'''.format(bn=base_name, acs=ast_classes, v=visitor))
+''')
 
 
 def main():
@@ -66,6 +66,7 @@ def main():
         'Call': {'callee': 'Expr', 'paren': 'Token', 'arguments': 'List<Expr>'},
         'Get': {'object': 'Expr', 'name': 'Token'},
         'Set': {'object': 'Expr', 'name': 'Token', 'value': 'Expr'},
+        'This': {'keyword': 'Token'},
     })
     define_ast(output_dir, 'Stmt', {
         'Block': {'statements': 'List<Stmt>'},
