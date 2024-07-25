@@ -11,7 +11,7 @@ class Random {
 
 puts('enter seed:');
 var seed = toNumber(gets());
-puts();
+puts('');
 
 var random = Random(seed);
 puts('the first 5 random numbers are:');
