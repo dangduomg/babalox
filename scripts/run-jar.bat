@@ -1,3 +1,2 @@
 @echo off
-cd ..
-java -jar bin/jlox.jar %1
+java -jar ..\bin\jlox.jar %1
