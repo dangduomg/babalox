@@ -9,3 +9,6 @@ A dialect of [Crafting Interpreters'](https://craftinginterpreters.com/) Lox pro
   - Functions ([chapter 10](https://craftinginterpreters.com/functions.html))
   - Classes ([chapter 12](https://craftinginterpreters.com/classes.html))
 - Inheritance ([chapter 13](https://craftinginterpreters.com/inheritance.html)) isn't supported yet
+- Additional operators `**` and `%`
+- Additional functions `puts`, `gets`, `toString`, `toNumber`
+- Additional class `Data` (for creating data objects)
