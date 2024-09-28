@@ -1,6 +1,5 @@
 package com.craftinginterpreters.lox;
 
-@SuppressWarnings("serial")
 class Return extends RuntimeException {
 	final Object value;
 

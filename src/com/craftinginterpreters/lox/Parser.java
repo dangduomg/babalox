@@ -435,7 +435,6 @@ class Parser {
 		}
 	}
 
-	@SuppressWarnings("serial")
 	private static class ParseError extends RuntimeException {
 	}
 }

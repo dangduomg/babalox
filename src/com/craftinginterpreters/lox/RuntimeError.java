@@ -1,6 +1,5 @@
 package com.craftinginterpreters.lox;
 
-@SuppressWarnings("serial")
 class RuntimeError extends RuntimeException {
 	final Token token;
 
