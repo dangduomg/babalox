@@ -77,7 +77,7 @@ def main():
         'While': {'condition': 'Expr', 'body': 'Stmt'},
         'Function': {'name': 'Token', 'params': 'List<Token>', 'body': 'List<Stmt>'},
         'Return': {'keyword': 'Token' , 'value': 'Expr'},
-        'Class': {'name': 'Token', 'methods': 'List<Stmt.Function>'},
+        'Class': {'name': 'Token', 'methods': 'List<Stmt.Function>', 'super': 'Expr.Variable'},
     })
 
 if __name__ == '__main__':
