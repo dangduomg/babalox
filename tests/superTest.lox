@@ -1,0 +1,52 @@
+// Lehmer LCG: shitty RNG
+class Random {
+	init(multiplier) {
+		this.seeded = false;
+        this.multiplier = multiplier;
+	}
+
+    seed(newSeed) {
+        this.seeded = true;
+        this.state = newSeed;
+    }
+
+	next() {
+        if (this.seeded) {
+            this.state = (this.state * this.multiplier) % 2 ** 31;
+            return this.state;
+        }
+	}
+}
+
+// Non-Lehmer LCG: better RNG
+class BetterRandom < Random {
+    init(multiplier, additive) {
+        super.init(multiplier);
+        this.additive = additive;
+    }
+    
+    next() {
+        if (this.seeded) {
+            this.state = (this.state * this.multiplier + this.additive) % 2 ** 31;
+            return this.state;
+        }
+    }
+}
+
+puts('enter seed:');
+var seed = toNumber(gets());
+puts('');
+
+var randu = Random(65539);
+randu.seed(seed);
+puts("the first 5 random numbers from RANDU are:");
+for (var i = 0; i < 5; i = i + 1) {
+	puts(randu.next());
+}
+
+var glibcRand = BetterRandom(1103515245, 12345);
+glibcRand.seed(seed);
+puts("the first 5 random numbers from glibc rand() are:");
+for (var i = 0; i < 5; i = i + 1) {
+	puts(glibcRand.next());
+}

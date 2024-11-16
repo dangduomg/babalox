@@ -67,6 +67,7 @@ def main():
         'Get': {'object': 'Expr', 'name': 'Token'},
         'Set': {'object': 'Expr', 'name': 'Token', 'value': 'Expr'},
         'This': {'keyword': 'Token'},
+        'Super': {'keyword': 'Token', 'method': 'Token'},
     })
     define_ast(output_dir, 'Stmt', {
         'Block': {'statements': 'List<Stmt>'},
@@ -77,7 +78,7 @@ def main():
         'While': {'condition': 'Expr', 'body': 'Stmt'},
         'Function': {'name': 'Token', 'params': 'List<Token>', 'body': 'List<Stmt>'},
         'Return': {'keyword': 'Token' , 'value': 'Expr'},
-        'Class': {'name': 'Token', 'methods': 'List<Stmt.Function>', 'super': 'Expr.Variable'},
+        'Class': {'name': 'Token', 'super_': 'Expr.Variable', 'methods': 'List<Stmt.Function>'},
     })
 
 if __name__ == '__main__':

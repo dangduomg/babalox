@@ -67,7 +67,14 @@ class Parser {
 
 	private Stmt classDeclaration() {
 		var name = this.consume(TokenType.IDENTIFIER, "Expect class name.");
-		this.consume(TokenType.LEFT_BRACE, "Expect '{' after class name");
+
+		Expr.Variable super_ = null;
+		if (this.match(TokenType.LESS)) {
+			var superToken = this.consume(TokenType.IDENTIFIER, "Expect superclass name after '<'");
+			super_ = new Expr.Variable(superToken);
+		}
+
+		this.consume(TokenType.LEFT_BRACE, "Expect '{' after class head");
 
 		var methods = new ArrayList<Stmt.Function>();
 		while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
@@ -75,7 +82,7 @@ class Parser {
 		}
 
 		this.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body");
-		return new Stmt.Class(name, methods);
+		return new Stmt.Class(name, super_, methods);
 	}
 
 	private Stmt statement() {
@@ -354,6 +361,14 @@ class Parser {
 
 		if (this.match(TokenType.THIS))
 			return new Expr.This(this.previous());
+
+		if (this.match(TokenType.SUPER)) {
+			var keyword = this.previous();
+			this.consume(TokenType.DOT, "Expect '.' after super");
+			var method = this.consume(TokenType.IDENTIFIER,
+					"Expect superclass method name");
+			return new Expr.Super(keyword, method);
+		}
 
 		if (this.match(TokenType.LEFT_PAREN)) {
 			Expr expr = this.expression();

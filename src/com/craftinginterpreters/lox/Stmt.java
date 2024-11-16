@@ -137,10 +137,12 @@ abstract class Stmt {
 
 	static class Class extends Stmt {
 		final Token name;
+		final Expr.Variable super_;
 		final List<Stmt.Function> methods;
 
-		Class(Token name, List<Stmt.Function> methods) {
+		Class(Token name, Expr.Variable super_, List<Stmt.Function> methods) {
 			this.name = name;
+			this.super_ = super_;
 			this.methods = methods;
 		}
     

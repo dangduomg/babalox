@@ -1,10 +1,7 @@
 package com.craftinginterpreters.lox;
 
 import java.lang.Math;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 	final Environment globals = new Environment();
@@ -22,13 +19,12 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 		this.globals.define("puts", new Native("puts", 1) {
 			@Override
 			public Object call(Interpreter intp, List<Object> args) {
-				System.out.println(intp.stringify(args.get(0)));
+				System.out.println(intp.stringify(args.getFirst()));
 				return null;
 			}
 		});
 
 		this.globals.define("gets", new Native("gets", 0) {
-			@SuppressWarnings("resource")
 			@Override
 			public Object call(Interpreter intp, List<Object> args) {
 				return new java.util.Scanner(System.in).nextLine();
@@ -38,14 +34,14 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 		this.globals.define("toString", new Native("toString", 1) {
 			@Override
 			public Object call(Interpreter intp, List<Object> args) {
-				return intp.stringify(args.get(0));
+				return intp.stringify(args.getFirst());
 			}
 		});
 
 		this.globals.define("toNumber", new Native("toNumber", 1) {
 			@Override
 			public Object call(Interpreter intp, List<Object> args) {
-				var arg = args.get(0);
+				var arg = args.getFirst();
 				if (arg instanceof String)
 					return Scanner.toNumber((String) arg);
 				else if (arg instanceof Double)
@@ -54,7 +50,17 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 			}
 		});
 
-		this.globals.define("Data", new LoxClass("Data", new HashMap<String, LoxFunction>()));
+		this.globals.define("Object", new LoxClass(
+			"Object",
+			null,
+			new HashMap<>()
+		));
+
+		this.globals.define("Data", new LoxClass(
+				"Data",
+				null,
+				new HashMap<>()
+		));
 	}
 
 	void interpret(List<Stmt> statements) {
@@ -119,7 +125,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
 	@Override
 	public Void visitFunctionStmt(Stmt.Function stmt) {
-		var function = new LoxFunction(stmt, this.environment, false);
+		var function = new LoxFunction(stmt, this.environment, false, null);
 		this.environment.define(stmt.name, function);
 		return null;
 	}
@@ -136,14 +142,33 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 	public Void visitClassStmt(Stmt.Class stmt) {
 		this.environment.define(stmt.name, null);
 
-		var methods = new HashMap<String, LoxFunction>();
-		for (var method : stmt.methods) {
-			var isInitializer = method.name.lexeme == "init";
-			var function = new LoxFunction(method, this.environment, isInitializer);
-			methods.put(method.name.lexeme, function);
+		LoxClass super_ = null;
+		if (stmt.super_ != null) {
+			var superResult = this.evaluate(stmt.super_);
+			if (!(superResult instanceof LoxClass)) {
+				Lox.runtimeError(new RuntimeError(
+					stmt.super_.name,
+					"Superclass must be a class."
+				));
+			} else {
+				super_ = (LoxClass) superResult;
+				this.environment = new Environment(this.environment);
+				this.environment.define("super", super_);
+			}
 		}
 
-		var class_ = new LoxClass(stmt.name.lexeme, methods);
+		var class_ = new LoxClass(stmt.name.lexeme, super_, new HashMap<>());
+
+		for (var method : stmt.methods) {
+			var isInitializer = method.name.lexeme.equals("init");
+			var function = new LoxFunction(method, this.environment, isInitializer, class_);
+			class_.methods.put(method.name.lexeme, function);
+		}
+
+		if (super_ != null) {
+			this.environment = this.environment.enclosing;
+		}
+
 		this.environment.assign(stmt.name, class_);
 		return null;
 	}
@@ -203,16 +228,16 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 	public Object visitUnaryExpr(Expr.Unary expr) {
 		Object right = this.evaluate(expr.right);
 
-		switch (expr.operator.type) {
-		case BANG:
-			return !this.isTruthy(right);
-		case MINUS:
-			this.checkNumberOperand(expr.operator, right);
-			return -(double) right;
-		default:
-			// unreachable
-			return null;
-		}
+		return switch (expr.operator.type) {
+			case BANG -> !this.isTruthy(right);
+			case MINUS -> {
+				this.checkNumberOperand(expr.operator, right);
+				yield -(double) right;
+			}
+			default ->
+				// unreachable
+				null;
+		};
 	}
 
 	@Override
@@ -242,7 +267,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 				return (double) left + (double) right;
 			}
 			if (left instanceof String && right instanceof String) {
-				return (String) left + (String) right;
+				return left + (String) right;
 			}
 			throw new RuntimeError(expr.operator,
 				"All operands must be either numbers or strings."
@@ -272,12 +297,13 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 	public Object visitLogicalExpr(Expr.Logical expr) {
 		Object left = this.evaluate(expr.left);
 
-		if (expr.operator.type == TokenType.OR)
+		if (expr.operator.type == TokenType.OR) {
 			if (this.isTruthy(left))
 				return left;
-			else if (expr.operator.type == TokenType.AND)
-				if (!this.isTruthy(left))
-					return left;
+		} else if (expr.operator.type == TokenType.AND) {
+			if (!this.isTruthy(left))
+				return left;
+		}
 
 		return this.evaluate(expr.right);
 	}
@@ -285,19 +311,20 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 	@Override
 	public Object visitCallExpr(Expr.Call expr) {
 		Object callee = this.evaluate(expr.callee);
-		if (!(callee instanceof LoxCallable))
+		if (!(callee instanceof LoxCallable function)) {
 			throw new RuntimeError(expr.paren, "Can only call functions and classes.");
+		}
 
 		List<Object> arguments = new ArrayList<>();
 		for (Expr argument : expr.arguments) {
 			arguments.add(this.evaluate(argument));
 		}
 
-		LoxCallable function = (LoxCallable) callee;
-		if (arguments.size() != function.arity())
+		if (arguments.size() != function.arity()) {
 			throw new RuntimeError(expr.paren,
 				"Expected " + function.arity() + "arguments but got " + arguments.size()
 			);
+		}
 		return function.call(this, arguments);
 	}
 
@@ -325,6 +352,14 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 	@Override
 	public Object visitThisExpr(Expr.This expr) {
 		return this.lookupVariable(expr.keyword, expr);
+	}
+
+	public Object visitSuperExpr(Expr.Super expr) {
+		var distance = this.locals.get(expr);
+		var super_ = (LoxClass)this.environment.getAt(distance, "super");
+		var object = (LoxInstance)this.environment.getAt(distance - 1, "this");
+		var method = super_.findMethod(expr.method.lexeme);
+		return method.bind(object);
 	}
 
 	private Object lookupVariable(Token name, Expr expr) {
