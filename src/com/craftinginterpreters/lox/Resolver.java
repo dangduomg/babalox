@@ -177,14 +177,13 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
 	@Override
 	public Void visitSetExpr(Expr.Set expr) {
-		this.declare(expr.name);
 		this.define(expr.name);
 		return null;
 	}
 
 	@Override
 	public Void visitThisExpr(Expr.This expr) {
-		if (this.currentClass != ClassType.CLASS) {
+		if (this.currentClass != ClassType.CLASS && this.currentClass != ClassType.SUBCLASS) {
 			Lox.error(expr.keyword, "Can't use 'this' outside a class");
 		}
 		this.resolveLocal(expr, expr.keyword);
